@@ -14,6 +14,6 @@ var cmdVersion = &cobra.Command{
 	Short: "",
 	Long:  "",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("dockware-cli v1.0")
+		fmt.Println("dockware-cli v0.5")
 	},
 }
