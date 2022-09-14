@@ -92,7 +92,23 @@ var fooCmd = &cobra.Command{
 			fmt.Println("You can now use this file to start your Docker containers")
 
 		} else if strings.Compare("3", text) == 0 {
-			fmt.Println("Fine, one image to serve your needs...")
+
+			fmt.Println("How do you want to work with your Docker containers?")
+			fmt.Println("(1) Docker Bind-Mount")
+			fmt.Println("(2) Docker Volume")
+			fmt.Println("(3) SFTP")
+			fmt.Print(">> ")
+
+			workingType, _ := reader.ReadString('\n')
+			workingType = strings.Replace(workingType, "\n", "", -1)
+
+			composeFile := buildCompose("contribute", workingType, "latest", false, false, false, false, false)
+			f, _ := os.Create("docker-compose.yml")
+			defer f.Close()
+			f.WriteString(composeFile)
+
+			fmt.Println("File generated: ./docker-compose.yml")
+			fmt.Println("You can now use this file to start your Docker containers")
 		}
 	},
 }
