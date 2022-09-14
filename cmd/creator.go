@@ -80,8 +80,9 @@ var fooCmd = &cobra.Command{
 			withMySQL := askYesNo("Add MySQL?")
 			withRedis := askYesNo("Add Redis?")
 			withAppServer := (devType == "3");
+			withPWA := (devType == "4");
 
-			composeFile := buildCompose("dev", workingType, swVersion, withMySQL, withElastic, withRedis, withAppServer)
+			composeFile := buildCompose("dev", workingType, swVersion, withMySQL, withElastic, withRedis, withAppServer, withPWA)
 
 			f, _ := os.Create("docker-compose.yml")
 			defer f.Close()
@@ -118,7 +119,7 @@ func askYesNo(text string) bool {
 	return answer == "y"
 }
 
-func buildCompose(dockwareImage string, workingType string, swVersion string, withMySQL bool, withElastic bool, withRedis bool, withAppServer bool) string {
+func buildCompose(dockwareImage string, workingType string, swVersion string, withMySQL bool, withElastic bool, withRedis bool, withAppServer bool, withPWA bool) string {
 	text := "version: \"3.0\"\n"
 	text = text + "\n"
 
@@ -143,6 +144,13 @@ func buildCompose(dockwareImage string, workingType string, swVersion string, wi
 		text = text + "      - \"22:22\"\n"
 	}
 
+	if withPWA {
+		text = text + "    environment:\n"
+		text = text + "      # assign your custom access key here\n"
+		text = text + "      - SW_API_ACCESS_KEY=SW_XYZ\n"	
+	}
+
+
 	if withAppServer {
 		text = text + "\n"
 		text = text + "  app:\n"
@@ -162,8 +170,35 @@ func buildCompose(dockwareImage string, workingType string, swVersion string, wi
 			text = text + "      - \"1022:22\"\n"
 		}
 		text = text + "    links:\n"
-		text = text + "      - shopware:dockware.app.dev\n"
+		text = text + "      # use this as the Shopware domain for the handshake and communication back to the shop\n"
+		text = text + "      - shopware:dockware.dev\n"
 	}
+
+	if withPWA {
+		text = text + "\n"
+		text = text + "  pwa:\n"
+		text = text + "    container_name: pwa\n"
+		text = text + "    image: dockware/flex:latest\n"
+		switch workingType {
+		case "1":
+			text = text + "    volumes:\n"
+			text = text + "      - \"./pwa:/var/www/html\"\n"
+		case "2":
+			text = text + "    volumes:\n"
+			text = text + "      - \"pwa_volume:/var/www/html\"\n"
+		}
+		text = text + "    ports:\n"
+		text = text + "      - \"2000:80\"\n"
+		if workingType == "3" {
+			text = text + "      - \"2022:22\"\n"
+		}
+		text = text + "    links:\n"
+		text = text + "      # use this as the shopwareEndpoint domain\n"
+		text = text + "      - shopware:dockware.pwa.dev\n"
+		text = text + "    environment:\n"
+		text = text + "      - NODE_VERSION=16\n"
+	}
+
 
 	if withMySQL {
 		text = text + "\n"
@@ -189,6 +224,7 @@ func buildCompose(dockwareImage string, workingType string, swVersion string, wi
 		text = text + "      - \"9300:9300\"\n"
 		text = text + "    environment:\n"
 		text = text + "      - \"discovery.type=single-node\"\n"
+		text = text + "      # adjust the memory to your needs\n"
 		text = text + "      - \"ES_JAVA_OPTS=-Xms512m -Xmx512m\"\n"
 		text = text + "      - \"xpack.security.enabled=false\"\n"
 	}
@@ -210,6 +246,11 @@ func buildCompose(dockwareImage string, workingType string, swVersion string, wi
 
 		if withAppServer {
 			text = text + "  app_volume:\n"
+			text = text + "    driver: local\n"
+		}
+
+		if withPWA {
+			text = text + "  pwa_volume:\n"
 			text = text + "    driver: local\n"
 		}
 	}
