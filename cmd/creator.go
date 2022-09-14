@@ -73,14 +73,15 @@ var fooCmd = &cobra.Command{
 			fmt.Print(">> ")
 
 			workingType, _ := reader.ReadString('\n')
-			workingType = strings.Replace(devType, "\n", "", -1)
+			workingType = strings.Replace(workingType, "\n", "", -1)
 
 			swVersion := askShopwareVersion()
 			withElastic := askYesNo("Add Elasticsearch?")
 			withMySQL := askYesNo("Add MySQL?")
 			withRedis := askYesNo("Add Redis?")
+			withAppServer := (devType == "3");
 
-			composeFile := buildCompose("dev", workingType, swVersion, withMySQL, withElastic, withRedis)
+			composeFile := buildCompose("dev", workingType, swVersion, withMySQL, withElastic, withRedis, withAppServer)
 
 			f, _ := os.Create("docker-compose.yml")
 			defer f.Close()
@@ -117,7 +118,7 @@ func askYesNo(text string) bool {
 	return answer == "y"
 }
 
-func buildCompose(dockwareImage string, workingType string, swVersion string, withMySQL bool, withElastic bool, withRedis bool) string {
+func buildCompose(dockwareImage string, workingType string, swVersion string, withMySQL bool, withElastic bool, withRedis bool, withAppServer bool) string {
 	text := "version: \"3.0\"\n"
 	text = text + "\n"
 
@@ -140,6 +141,28 @@ func buildCompose(dockwareImage string, workingType string, swVersion string, wi
 	text = text + "      - \"443:443\"\n"
 	if workingType == "3" {
 		text = text + "      - \"22:22\"\n"
+	}
+
+	if withAppServer {
+		text = text + "\n"
+		text = text + "  app:\n"
+		text = text + "    container_name: app\n"
+		text = text + "    image: dockware/flex:latest\n"
+		switch workingType {
+		case "1":
+			text = text + "    volumes:\n"
+			text = text + "      - \"./app:/var/www/html\"\n"
+		case "2":
+			text = text + "    volumes:\n"
+			text = text + "      - \"app_volume:/var/www/html\"\n"
+		}
+		text = text + "    ports:\n"
+		text = text + "      - \"1000:80\"\n"
+		if workingType == "3" {
+			text = text + "      - \"1022:22\"\n"
+		}
+		text = text + "    links:\n"
+		text = text + "      - shopware:dockware.app.dev\n"
 	}
 
 	if withMySQL {
@@ -184,6 +207,11 @@ func buildCompose(dockwareImage string, workingType string, swVersion string, wi
 		text = text + "volumes:\n"
 		text = text + "  shop_volume:\n"
 		text = text + "    driver: local\n"
+
+		if withAppServer {
+			text = text + "  app_volume:\n"
+			text = text + "    driver: local\n"
+		}
 	}
 	return text
 }
