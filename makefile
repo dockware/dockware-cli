@@ -15,4 +15,4 @@ install: ## Installs all dependencies
 	go mod download
 
 build: ## Builds the binary
-	go build -o build/dockware
+	go build -o build/dockware-cli
