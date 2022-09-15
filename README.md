@@ -4,6 +4,8 @@ Welcome to the dockware-cli project.
 This is all about a tool to get started with dockware and Shopware even faster.
 
 At the moment we are in an experimental development phase - feel free to share ideas :)
+And yes, it's by far not the best code, haha....whatever.
+
 
 And thank you for using dockware!
 
@@ -21,6 +23,19 @@ And as always, we just try to help you with the onboarding steps to Docker and s
 ./dockware creator 
 ```
 
+The output should then look like this. Just continue answering the questions and you'll end up with a nice docker-compose.yml file.
+
+```bash 
+Dockware Creator
+
+What do you want to do?
+(1) Play around with Shopware
+(2) Develop with Shopware
+(3) Contribute to Shopware
+
+...
+```
+
 
 ## Version
 Get the version of your dockware-cli binary.
@@ -28,3 +43,9 @@ Get the version of your dockware-cli binary.
 ```bash
 ./dockware version 
 ```
+
+
+wget https://phar.phpunit.de/phpunit-6.5.phar
+$ chmod +x phpunit-6.5.phar
+$ sudo mv phpunit-6.5.phar /usr/local/bin/phpunit
+$ phpunit --version
