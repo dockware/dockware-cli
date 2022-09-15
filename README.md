@@ -1,5 +1,9 @@
 # dockware-cli
 
+
+![Shopware 6 Preview](./header.jpg)
+
+
 Welcome to the dockware-cli project.
 This is all about a tool to get started with dockware and Shopware even faster.
 
