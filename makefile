@@ -15,4 +15,10 @@ install: ## Installs all dependencies
 	go mod download
 
 build: ## Builds the binary
-	go build -o build/dockware-cli
+	env GOOS=linux GOARCH=arm64 go build -o build/linux/arm64/dockware-cli
+	env GOOS=linux GOARCH=arm go build -o build/linux/arm/dockware-cli
+	env GOOS=darwin GOARCH=arm64 go build -o build/mac/arm64/dockware-cli
+	env GOOS=darwin GOARCH=amd64 go build -o build/mac/amd64/dockware-cli
+	env GOOS=windows GOARCH=arm64 go build -o build/windows/arm64/dockware-cli
+	env GOOS=windows GOARCH=amd64 go build -o build/windows/amd64/dockware-cli
+	env GOOS=windows GOARCH=arm   go build -o build/windows/arm/dockware-cli
