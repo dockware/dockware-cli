@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
+	"github.com/AlecAivazis/survey/v2"
+	dc "github.com/dockware/dockware-cli/dockercompose"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 	"os"
@@ -11,267 +12,227 @@ import (
 	"syscall"
 )
 
-func init() {
-	rootCmd.AddCommand(fooCmd)
+type Answers struct {
+	ImageType       int    `survey:"image"` // setting int as type will yield the index instead of the option
+	ImageTypeString string `survey:"image"` // is added manually via the image title
+	SwVersion       string `survey:"swVersion"`
+	DevType         int    `survey:"devType"` // What kind of development will the user do
+	MountType       int    `survey:"mountType"`
 }
 
-var fooCmd = &cobra.Command{
+func init() {
+	rootCmd.AddCommand(creatorCmd)
+}
+
+var creatorCmd = &cobra.Command{
 	Use:   "creator",
-	Short: "Use the interactive dockware creator to build get what you need for today's task",
+	Short: "Use the interactive dockware creator to get what you need for today's task",
 	Long:  "",
 	Run: func(cmd *cobra.Command, args []string) {
 		if !term.IsTerminal(int(syscall.Stdin)) {
 			fmt.Println("interactive terminal required")
 			os.Exit(1)
 		}
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Println("Dockware Creator")
-		fmt.Println("")
 
-		fmt.Println("What do you want to do?")
-		fmt.Println("(1) Play around with Shopware")
-		fmt.Println("(2) Develop with Shopware")
-		fmt.Println("(3) Contribute to Shopware")
-		fmt.Print(">> ")
+		a := &Answers{}
+		a.getImageType()
 
-		text, _ := reader.ReadString('\n')
-		text = strings.Replace(text, "\n", "", -1)
+		switch dc.ImageType(a.ImageType) {
+		case dc.Play:
 
-		fmt.Println("")
+			a.SwVersion = askShopwareVersion(dc.Play.String())
+			runArgs := []string{"run", "--rm", "--name shopware", "-p 80:80", "-p 443:443", fmt.Sprintf("dockware/%s:%s", a.ImageTypeString, a.SwVersion)}
 
-		if strings.Compare("1", text) == 0 {
+			fmt.Printf("All done! Just run the following command in your terminal and enjoy Shopware %s:\n\n", a.SwVersion)
+			fmt.Printf("docker %s\n\n", strings.Join(runArgs, " "))
+			execute := false
+			err := survey.AskOne(&survey.Confirm{
+				Message: "Run the command now?",
+			}, &execute)
+			if err != nil {
+				fmt.Printf("%s\n", err.Error())
+				os.Exit(1)
+			}
+			if execute {
+				cmd := exec.Command("docker", runArgs...)
+				cmd.Stdin = os.Stdin
+				cmd.Stderr = os.Stderr
+				cmd.Stdout = os.Stdout
+				err := cmd.Run()
+				if err != nil {
+					fmt.Println(err.Error())
+					os.Exit(1)
+				}
+			}
+			return
 
-			fmt.Println("Fine, let's just use dockware/play for today!")
+		case dc.Dev:
 
-			swVersion := askShopwareVersion()
+			a.getDevType()
+			a.getMountType()
 
-			tmpText := fmt.Sprintf("COOL! Just run the following command in your terminal and enjoy Shopware %s", swVersion)
-			startCmd := fmt.Sprintf("docker run --rm --name shopware -p 80:80 -p 443:443 dockware/play:%s", swVersion)
-			stopCmd := fmt.Sprintf("docker rm -f shopware")
-
-			fmt.Println("")
-			fmt.Println(tmpText)
-			fmt.Println("")
-			fmt.Println("[START] >> " + startCmd)
-			fmt.Println("[STOP] >> " + stopCmd)
-
-			cmd := exec.Command(startCmd)
-			res, _ := cmd.CombinedOutput()
-			fmt.Println(string(res))
-
-		} else if strings.Compare("2", text) == 0 {
-
-			fmt.Println("HEY DEV! YOU LOOK BRILLIANT TODAY.")
-			fmt.Println("What do you want to develop?")
-			fmt.Println("(1) Plugin")
-			fmt.Println("(2) Full Shop")
-			fmt.Println("(3) App")
-			fmt.Println("(4) Headless / PWA")
-			fmt.Print(">> ")
-			devType, _ := reader.ReadString('\n')
-			devType = strings.Replace(devType, "\n", "", -1)
-
-			fmt.Println("How do you want to work with your Docker containers?")
-			fmt.Println("(1) Docker Bind-Mount")
-			fmt.Println("(2) Docker Volume")
-			fmt.Println("(3) SFTP")
-			fmt.Print(">> ")
-
-			workingType, _ := reader.ReadString('\n')
-			workingType = strings.Replace(workingType, "\n", "", -1)
-
-			swVersion := askShopwareVersion()
+			swVersion := askShopwareVersion(a.ImageTypeString)
 			withElastic := askYesNo("Add Elasticsearch?")
 			withMySQL := askYesNo("Add MySQL?")
 			withRedis := askYesNo("Add Redis?")
-			withAppServer := (devType == "3")
-			withPWA := (devType == "4")
+			withAppServer := dc.DevType(a.DevType) == dc.App
+			withPWA := dc.DevType(a.DevType) == dc.Headless
 
-			composeFile := buildCompose("dev", workingType, swVersion, withMySQL, withElastic, withRedis, withAppServer, withPWA)
+			composeString, err := dc.BuildDockware("dev", dc.MountType(a.MountType), swVersion, withMySQL, withElastic, withRedis, withAppServer, withPWA)
+			if err != nil {
+				fmt.Printf("could not build YAML: %s\n", err.Error())
+				os.Exit(1)
+			}
 
-			f, _ := os.Create("docker-compose.yml")
-			defer f.Close()
-			f.WriteString(composeFile)
-
-			fmt.Println("File generated: ./docker-compose.yml")
-			fmt.Println("You can now use this file to start your Docker containers")
-
-		} else if strings.Compare("3", text) == 0 {
-
-			fmt.Println("How do you want to work with your Docker containers?")
-			fmt.Println("(1) Docker Bind-Mount")
-			fmt.Println("(2) Docker Volume")
-			fmt.Println("(3) SFTP")
-			fmt.Print(">> ")
-
-			workingType, _ := reader.ReadString('\n')
-			workingType = strings.Replace(workingType, "\n", "", -1)
-
-			composeFile := buildCompose("contribute", workingType, "latest", false, false, false, false, false)
-			f, _ := os.Create("docker-compose.yml")
-			defer f.Close()
-			f.WriteString(composeFile)
+			err = os.WriteFile("docker-compose.yml", []byte(composeString), 0666)
+			if err != nil {
+				fmt.Printf("could not write file: %s\n", err.Error())
+				os.Exit(1)
+			}
 
 			fmt.Println("File generated: ./docker-compose.yml")
 			fmt.Println("You can now use this file to start your Docker containers")
+			return
+		case dc.Contribute:
+
+			a.getMountType()
+
+			composeString, err := dc.BuildDockware("contribute", dc.MountType(a.MountType), "latest", false, false, false, false, false)
+			if err != nil {
+				fmt.Errorf("could not build YAML: %s\n", err.Error())
+			}
+
+			err = os.WriteFile("docker-compose.yml", []byte(composeString), 0666)
+			if err != nil {
+				fmt.Printf("could not write file: %s\n", err.Error())
+				os.Exit(1)
+			}
+
+			fmt.Println("File generated: ./docker-compose.yml")
+			fmt.Println("You can now use this file to start your Docker containers")
+			return
 		}
 	},
 }
 
-func askShopwareVersion() string {
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Println("What Shopware version: ")
-	fmt.Print(">> ")
+func (a *Answers) getDevType() {
+	devTypes := []string{
+		dc.Plugin:   "The classic way to extend Shopware",
+		dc.Shop:     "A full shop", // TODO better description
+		dc.App:      "The new way of extending Shopware",
+		dc.Headless: "If you don't want to use the Shopware frontend",
+	}
+	devTypeTitles := make([]string, len(devTypes))
+	for i, _ := range devTypes {
+		dt := dc.DevType(i)
+		devTypeTitles[i] = dt.String()
+	}
+	devTypeQuestion := []*survey.Question{
+		{
+			Name: "devType",
+			Prompt: &survey.Select{
+				Message: "What do you want to develop?",
+				Options: devTypeTitles,
+				Description: func(v string, i int) string {
+					return devTypes[i]
+				},
+			},
+			Validate: survey.Required,
+		},
+	}
 
-	swVersion, _ := reader.ReadString('\n')
-	swVersion = strings.Replace(swVersion, "\n", "", -1)
+	err := survey.Ask(devTypeQuestion, a)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+}
 
+func (a *Answers) getMountType() {
+	mountTypes := []string{
+		dc.BindMount: dc.BindMount.String(),
+		dc.Volume:    dc.Volume.String(),
+		dc.Sftp:      dc.Sftp.String(),
+	}
+	mountTypeTitles := make([]string, len(mountTypes))
+	for i, _ := range mountTypes {
+		mt := dc.MountType(i)
+		mountTypeTitles[i] = mt.String()
+	}
+	asMountType := []*survey.Question{
+		{
+			Name: "mountType",
+			Prompt: &survey.Select{
+				Message: "How do you want to work with your Docker containers?",
+				Options: mountTypeTitles,
+				Description: func(v string, i int) string {
+					return mountTypes[i]
+				},
+			},
+			Validate: survey.Required,
+		},
+	}
+	err := survey.Ask(asMountType, a)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+}
+
+func (a *Answers) getImageType() {
+	images := []string{
+		dc.Play:       "A Shopware shop without development tools",
+		dc.Dev:        "Suited for extension development",
+		dc.Contribute: "Best for contributing changes to the Shopware core",
+	}
+	imageTitles := make([]string, len(images))
+	for i, _ := range images {
+		it := dc.ImageType(i)
+		imageTitles[i] = it.String()
+	}
+	askImage := []*survey.Question{
+		{
+			Name: "image",
+			Prompt: &survey.Select{
+				Message: "Which image to use?",
+				Options: imageTitles,
+				Description: func(v string, i int) string {
+					return images[i]
+				},
+			},
+			Validate: survey.Required,
+		},
+	}
+	err := survey.Ask(askImage, a)
+	if err != nil {
+		fmt.Printf("Could not get Image Type: %s\n", err.Error())
+		os.Exit(1)
+	}
+	a.ImageTypeString = dc.ImageType(a.ImageType).String()
+}
+
+func askShopwareVersion(image string) string {
+	swVersion := ""
+	prompt := &survey.Input{
+		Message: "Which shopware version to use?",
+		Default: "latest",
+		Help:    fmt.Sprintf("For a list of tags see https://hub.docker.com/r/dockware/%s/tags", image),
+	}
+	err := survey.AskOne(prompt, &swVersion)
+	if err != nil {
+		return "latest"
+	}
 	return swVersion
 }
 
 func askYesNo(text string) bool {
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Println(text + " (y/n)")
-	fmt.Print(">> ")
-
-	answer, _ := reader.ReadString('\n')
-	answer = strings.Replace(answer, "\n", "", -1)
-
-	return answer == "y"
-}
-
-func buildCompose(dockwareImage string, workingType string, swVersion string, withMySQL bool, withElastic bool, withRedis bool, withAppServer bool, withPWA bool) string {
-	text := "version: \"3.0\"\n"
-	text = text + "\n"
-
-	text = text + "services:\n"
-
-	text = text + "\n"
-	text = text + "  shopware:\n"
-	text = text + "    container_name: shopware\n"
-	text = text + "    image: dockware/" + dockwareImage + ":" + swVersion + "\n"
-	switch workingType {
-	case "1":
-		text = text + "    volumes:\n"
-		text = text + "      - \"./src:/var/www/html\"\n"
-	case "2":
-		text = text + "    volumes:\n"
-		text = text + "      - \"shop_volume:/var/www/html\"\n"
+	result := false
+	prompt := &survey.Confirm{
+		Message: text,
 	}
-	text = text + "    ports:\n"
-	text = text + "      - \"80:80\"\n"
-	text = text + "      - \"443:443\"\n"
-	if workingType == "3" {
-		text = text + "      - \"22:22\"\n"
+	err := survey.AskOne(prompt, &result)
+	if err != nil {
+		return false
 	}
-
-	if withPWA {
-		text = text + "    environment:\n"
-		text = text + "      # assign your custom access key here\n"
-		text = text + "      - SW_API_ACCESS_KEY=SW_XYZ\n"
-	}
-
-	if withAppServer {
-		text = text + "\n"
-		text = text + "  app:\n"
-		text = text + "    container_name: app\n"
-		text = text + "    image: dockware/flex:latest\n"
-		switch workingType {
-		case "1":
-			text = text + "    volumes:\n"
-			text = text + "      - \"./app:/var/www/html\"\n"
-		case "2":
-			text = text + "    volumes:\n"
-			text = text + "      - \"app_volume:/var/www/html\"\n"
-		}
-		text = text + "    ports:\n"
-		text = text + "      - \"1000:80\"\n"
-		if workingType == "3" {
-			text = text + "      - \"1022:22\"\n"
-		}
-		text = text + "    links:\n"
-		text = text + "      # use this as the Shopware domain for the handshake and communication back to the shop\n"
-		text = text + "      - shopware:dockware.dev\n"
-	}
-
-	if withPWA {
-		text = text + "\n"
-		text = text + "  pwa:\n"
-		text = text + "    container_name: pwa\n"
-		text = text + "    image: dockware/flex:latest\n"
-		switch workingType {
-		case "1":
-			text = text + "    volumes:\n"
-			text = text + "      - \"./pwa:/var/www/html\"\n"
-		case "2":
-			text = text + "    volumes:\n"
-			text = text + "      - \"pwa_volume:/var/www/html\"\n"
-		}
-		text = text + "    ports:\n"
-		text = text + "      - \"2000:80\"\n"
-		if workingType == "3" {
-			text = text + "      - \"2022:22\"\n"
-		}
-		text = text + "    links:\n"
-		text = text + "      # use this as the shopwareEndpoint domain\n"
-		text = text + "      - shopware:dockware.pwa.dev\n"
-		text = text + "    environment:\n"
-		text = text + "      - NODE_VERSION=16\n"
-	}
-
-	if withMySQL {
-		text = text + "\n"
-		text = text + "  db:\n"
-		text = text + "    container_name: db\n"
-		text = text + "    image: mysql:5.7\n"
-		text = text + "    ports:\n"
-		text = text + "      - \"3306:3306\"\n"
-		text = text + "    environment:\n"
-		text = text + "      - MYSQL_ROOT_PASSWORD=root\n"
-		text = text + "      - MYSQL_PASSWORD=root\n"
-		text = text + "      - MYSQL_DATABASE=shopware\n"
-		text = text + "      - TZ=Europe/Berlin\n"
-	}
-
-	if withElastic {
-		text = text + "\n"
-		text = text + "  elastic:\n"
-		text = text + "    container_name: elasticsearch\n"
-		text = text + "    image: elasticsearch/latest\n"
-		text = text + "    ports:\n"
-		text = text + "      - \"9200:9200\"\n"
-		text = text + "      - \"9300:9300\"\n"
-		text = text + "    environment:\n"
-		text = text + "      - \"discovery.type=single-node\"\n"
-		text = text + "      # adjust the memory to your needs\n"
-		text = text + "      - \"ES_JAVA_OPTS=-Xms512m -Xmx512m\"\n"
-		text = text + "      - \"xpack.security.enabled=false\"\n"
-	}
-
-	if withRedis {
-		text = text + "\n"
-		text = text + "  redis:\n"
-		text = text + "    container_name: redis\n"
-		text = text + "    image: redis/latest\n"
-		text = text + "    ports:\n"
-		text = text + "      - \"6379:6379\"\n"
-	}
-
-	if workingType == "2" {
-		text = text + "\n"
-		text = text + "volumes:\n"
-		text = text + "  shop_volume:\n"
-		text = text + "    driver: local\n"
-
-		if withAppServer {
-			text = text + "  app_volume:\n"
-			text = text + "    driver: local\n"
-		}
-
-		if withPWA {
-			text = text + "  pwa_volume:\n"
-			text = text + "    driver: local\n"
-		}
-	}
-	return text
+	return result
 }
