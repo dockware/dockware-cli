@@ -4,9 +4,11 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 )
 
 func init() {
@@ -18,7 +20,10 @@ var fooCmd = &cobra.Command{
 	Short: "Use the interactive dockware creator to build get what you need for today's task",
 	Long:  "",
 	Run: func(cmd *cobra.Command, args []string) {
-
+		if !term.IsTerminal(int(syscall.Stdin)) {
+			fmt.Println("interactive terminal required")
+			os.Exit(1)
+		}
 		reader := bufio.NewReader(os.Stdin)
 		fmt.Println("Dockware Creator")
 		fmt.Println("")
@@ -79,8 +84,8 @@ var fooCmd = &cobra.Command{
 			withElastic := askYesNo("Add Elasticsearch?")
 			withMySQL := askYesNo("Add MySQL?")
 			withRedis := askYesNo("Add Redis?")
-			withAppServer := (devType == "3");
-			withPWA := (devType == "4");
+			withAppServer := (devType == "3")
+			withPWA := (devType == "4")
 
 			composeFile := buildCompose("dev", workingType, swVersion, withMySQL, withElastic, withRedis, withAppServer, withPWA)
 
@@ -163,9 +168,8 @@ func buildCompose(dockwareImage string, workingType string, swVersion string, wi
 	if withPWA {
 		text = text + "    environment:\n"
 		text = text + "      # assign your custom access key here\n"
-		text = text + "      - SW_API_ACCESS_KEY=SW_XYZ\n"	
+		text = text + "      - SW_API_ACCESS_KEY=SW_XYZ\n"
 	}
-
 
 	if withAppServer {
 		text = text + "\n"
@@ -214,7 +218,6 @@ func buildCompose(dockwareImage string, workingType string, swVersion string, wi
 		text = text + "    environment:\n"
 		text = text + "      - NODE_VERSION=16\n"
 	}
-
 
 	if withMySQL {
 		text = text + "\n"
