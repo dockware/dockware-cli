@@ -1,7 +1,7 @@
 # dockware-cli
 
 
-![Shopware 6 Preview](./header.jpg)
+![Shopware 6 Preview](./readme-media/header.jpg)
 
 
 Welcome to the dockware-cli project.
