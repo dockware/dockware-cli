@@ -14,6 +14,13 @@ help:
 install: ## Installs all dependencies
 	go mod download
 
+# ----------------------------------------------------------------------------------------------------------------
+
+test: ## Installs all dependencies
+	go test ./...
+
+# ----------------------------------------------------------------------------------------------------------------
+
 build: ## Builds the binary
 	env GOOS=linux GOARCH=amd64 go build -o ./build/linux/amd64/dockware-cli .
 	env GOOS=linux GOARCH=386 go build -o ./build/linux/386/dockware-cli .
