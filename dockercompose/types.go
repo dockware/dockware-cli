@@ -1,14 +1,14 @@
 package dockercompose
 
-type ImageType int64
+type DevIntent int64
 
 const (
-	Play ImageType = iota
+	Play DevIntent = iota
 	Dev
 	Contribute
 )
 
-func (it ImageType) String() string {
+func (it DevIntent) String() string {
 	switch it {
 	case Play:
 		return "play"

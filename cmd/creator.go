@@ -13,8 +13,8 @@ import (
 )
 
 type Answers struct {
-	ImageType       int    `survey:"image"` // setting int as type will yield the index instead of the option
-	ImageTypeString string `survey:"image"` // is added manually via the image title
+	DevIntent       int    `survey:"image"` // setting int as type will yield the index instead of the option
+	DevIntentString string `survey:"image"` // is added manually via the image title
 	SwVersion       string `survey:"swVersion"`
 	DevType         int    `survey:"devType"` // What kind of development will the user do
 	MountType       int    `survey:"mountType"`
@@ -35,13 +35,13 @@ var creatorCmd = &cobra.Command{
 		}
 
 		a := &Answers{}
-		a.getImageType()
+		a.getDevIntent()
 
-		switch dc.ImageType(a.ImageType) {
+		switch dc.DevIntent(a.DevIntent) {
 		case dc.Play:
 
 			a.SwVersion = askShopwareVersion(dc.Play.String())
-			runArgs := []string{"run", "--rm", "--name shopware", "-p 80:80", "-p 443:443", fmt.Sprintf("dockware/%s:%s", a.ImageTypeString, a.SwVersion)}
+			runArgs := []string{"run", "--rm", "--name shopware", "-p 80:80", "-p 443:443", fmt.Sprintf("dockware/%s:%s", a.DevIntentString, a.SwVersion)}
 
 			fmt.Printf("All done! Just run the following command in your terminal and enjoy Shopware %s:\n\n", a.SwVersion)
 			fmt.Printf("docker %s\n\n", strings.Join(runArgs, " "))
@@ -71,7 +71,7 @@ var creatorCmd = &cobra.Command{
 			a.getDevType()
 			a.getMountType()
 
-			swVersion := askShopwareVersion(a.ImageTypeString)
+			swVersion := askShopwareVersion(a.DevIntentString)
 			withElastic := askYesNo("Add Elasticsearch?")
 			withMySQL := askYesNo("Add MySQL?")
 			withRedis := askYesNo("Add Redis?")
@@ -179,7 +179,7 @@ func (a *Answers) getMountType() {
 	}
 }
 
-func (a *Answers) getImageType() {
+func (a *Answers) getDevIntent() {
 	images := []string{
 		dc.Play:       "A Shopware shop without development tools",
 		dc.Dev:        "Suited for extension development",
@@ -187,14 +187,14 @@ func (a *Answers) getImageType() {
 	}
 	imageTitles := make([]string, len(images))
 	for i, _ := range images {
-		it := dc.ImageType(i)
+		it := dc.DevIntent(i)
 		imageTitles[i] = it.String()
 	}
 	askImage := []*survey.Question{
 		{
 			Name: "image",
 			Prompt: &survey.Select{
-				Message: "Which image to use?",
+				Message: "What do you want to do?",
 				Options: imageTitles,
 				Description: func(v string, i int) string {
 					return images[i]
@@ -205,10 +205,10 @@ func (a *Answers) getImageType() {
 	}
 	err := survey.Ask(askImage, a)
 	if err != nil {
-		fmt.Printf("Could not get Image Type: %s\n", err.Error())
+		fmt.Printf("Could not get Dev Intent: %s\n", err.Error())
 		os.Exit(1)
 	}
-	a.ImageTypeString = dc.ImageType(a.ImageType).String()
+	a.DevIntentString = dc.DevIntent(a.DevIntent).String()
 }
 
 func askShopwareVersion(image string) string {
