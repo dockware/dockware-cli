@@ -41,7 +41,7 @@ var creatorCmd = &cobra.Command{
 		case dc.Play:
 
 			a.SwVersion = askShopwareVersion(dc.Play.String())
-			runArgs := []string{"run", "--rm", "--name shopware", "-p 80:80", "-p 443:443", fmt.Sprintf("dockware/%s:%s", a.DevIntentString, a.SwVersion)}
+			runArgs := []string{"run", "--rm", "--name", "shopware", "-p", "80:80", "-p" , "443:443", fmt.Sprintf("dockware/%s:%s", a.DevIntentString, a.SwVersion)}
 
 			fmt.Printf("All done! Just run the following command in your terminal and enjoy Shopware %s:\n\n", a.SwVersion)
 			fmt.Printf("docker %s\n\n", strings.Join(runArgs, " "))
