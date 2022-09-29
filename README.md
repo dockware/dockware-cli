@@ -32,10 +32,10 @@ The output should then look like this. Just continue answering the questions and
 ```bash 
 Dockware Creator
 
-What do you want to do?
-(1) Play around with Shopware
-(2) Develop with Shopware
-(3) Contribute to Shopware
+? What do you want to do?  [Use arrows to move, type to filter]
+> play - A Shopware shop without development tools
+  dev - Suited for extension development
+  contribute - Best for contributing changes to the Shopware core
 
 ...
 ```
