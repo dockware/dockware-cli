@@ -29,7 +29,7 @@ And as always, we just try to help you with the onboarding steps to Docker and s
 
 The output should then look like this. Just continue answering the questions and you'll end up with a nice docker-compose.yml file.
 
-```bash 
+``` 
 Dockware Creator
 
 ? What do you want to do?  [Use arrows to move, type to filter]
