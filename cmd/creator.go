@@ -6,6 +6,7 @@ import (
 	dc "github.com/dockware/dockware-cli/dockercompose"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
+	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -29,9 +30,8 @@ var creatorCmd = &cobra.Command{
 	Short: "Use the interactive dockware creator to get what you need for today's task",
 	Long:  "",
 	Run: func(cmd *cobra.Command, args []string) {
-		if !term.IsTerminal(int(syscall.Stdin)) {
-			fmt.Println("interactive terminal required")
-			os.Exit(1)
+		if !term.IsTerminal(syscall.Stdin) {
+			log.Fatal("interactive terminal required")
 		}
 
 		a := &Answers{}
@@ -41,7 +41,7 @@ var creatorCmd = &cobra.Command{
 		case dc.Play:
 
 			a.SwVersion = askShopwareVersion(dc.Play.String())
-			runArgs := []string{"run", "--rm", "--name", "shopware", "-p", "80:80", "-p" , "443:443", fmt.Sprintf("dockware/%s:%s", a.DevIntentString, a.SwVersion)}
+			runArgs := []string{"run", "--rm", "--name", "shopware", "-p", "80:80", "-p", "443:443", fmt.Sprintf("dockware/%s:%s", a.DevIntentString, a.SwVersion)}
 
 			fmt.Printf("All done! Just run the following command in your terminal and enjoy Shopware %s:\n\n", a.SwVersion)
 			fmt.Printf("docker %s\n\n", strings.Join(runArgs, " "))
@@ -50,8 +50,7 @@ var creatorCmd = &cobra.Command{
 				Message: "Run the command now?",
 			}, &execute)
 			if err != nil {
-				fmt.Printf("%s\n", err.Error())
-				os.Exit(1)
+				log.Fatalf("%s\n", err.Error())
 			}
 			if execute {
 				cmd := exec.Command("docker", runArgs...)
@@ -60,8 +59,7 @@ var creatorCmd = &cobra.Command{
 				cmd.Stdout = os.Stdout
 				err := cmd.Run()
 				if err != nil {
-					fmt.Println(err.Error())
-					os.Exit(1)
+					log.Fatal(err.Error())
 				}
 			}
 			return
@@ -80,14 +78,12 @@ var creatorCmd = &cobra.Command{
 
 			composeString, err := dc.BuildDockware("dev", dc.MountType(a.MountType), swVersion, withMySQL, withElastic, withRedis, withAppServer, withPWA)
 			if err != nil {
-				fmt.Printf("could not build YAML: %s\n", err.Error())
-				os.Exit(1)
+				log.Fatalf("could not build YAML: %s\n", err.Error())
 			}
 
 			err = os.WriteFile("docker-compose.yml", []byte(composeString), 0666)
 			if err != nil {
-				fmt.Printf("could not write file: %s\n", err.Error())
-				os.Exit(1)
+				log.Fatalf("could not write file: %s\n", err.Error())
 			}
 
 			fmt.Println("File generated: ./docker-compose.yml")
@@ -99,13 +95,12 @@ var creatorCmd = &cobra.Command{
 
 			composeString, err := dc.BuildDockware("contribute", dc.MountType(a.MountType), "latest", false, false, false, false, false)
 			if err != nil {
-				fmt.Errorf("could not build YAML: %s\n", err.Error())
+				log.Fatalf("could not build YAML: %s\n", err.Error())
 			}
 
 			err = os.WriteFile("docker-compose.yml", []byte(composeString), 0666)
 			if err != nil {
-				fmt.Printf("could not write file: %s\n", err.Error())
-				os.Exit(1)
+				log.Fatalf("could not write file: %s\n", err.Error())
 			}
 
 			fmt.Println("File generated: ./docker-compose.yml")
@@ -143,8 +138,7 @@ func (a *Answers) getDevType() {
 
 	err := survey.Ask(devTypeQuestion, a)
 	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
+		log.Fatal(err.Error())
 	}
 }
 
@@ -174,8 +168,7 @@ func (a *Answers) getMountType() {
 	}
 	err := survey.Ask(asMountType, a)
 	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
+		log.Fatal(err.Error())
 	}
 }
 
@@ -186,7 +179,7 @@ func (a *Answers) getDevIntent() {
 		dc.Contribute: "Best for contributing changes to the Shopware core",
 	}
 	imageTitles := make([]string, len(images))
-	for i, _ := range images {
+	for i := range images {
 		it := dc.DevIntent(i)
 		imageTitles[i] = it.String()
 	}
@@ -205,8 +198,7 @@ func (a *Answers) getDevIntent() {
 	}
 	err := survey.Ask(askImage, a)
 	if err != nil {
-		fmt.Printf("Could not get Dev Intent: %s\n", err.Error())
-		os.Exit(1)
+		log.Fatalf("Could not get Dev Intent: %s\n", err.Error())
 	}
 	a.DevIntentString = dc.DevIntent(a.DevIntent).String()
 }
