@@ -5,7 +5,7 @@ import (
 )
 import "gopkg.in/yaml.v3"
 
-type dockerCompose struct {
+type DockerCompose struct {
 	Version       string                  `yaml:"version"`
 	Services      map[string]*Service     `yaml:"services"`
 	VolumeDrivers map[string]VolumeDriver `yaml:"volumes,omitempty"`
@@ -24,20 +24,20 @@ type Service struct {
 	Links         []string `yaml:"links,omitempty"`
 }
 
-func Create(version string) dockerCompose {
-	return dockerCompose{
+func Create(version string) DockerCompose {
+	return DockerCompose{
 		Version:       version,
 		Services:      map[string]*Service{},
 		VolumeDrivers: map[string]VolumeDriver{},
 	}
 }
 
-func (dc *dockerCompose) AddOverwriteService(serviceName, containerName, image string) *Service {
+func (dc *DockerCompose) AddOverwriteService(serviceName, containerName, image string) *Service {
 	dc.Services[serviceName] = &Service{ContainerName: containerName, Image: image}
 	return dc.Services[serviceName]
 }
 
-func (dc *dockerCompose) AddVolume(volumeName, driver string) {
+func (dc *DockerCompose) AddVolume(volumeName, driver string) {
 	dc.VolumeDrivers[volumeName] = VolumeDriver{Driver: driver}
 }
 
@@ -69,7 +69,7 @@ func (s *Service) AddEnv(key, value string) {
 	s.Environment = append(s.Environment, fmt.Sprintf("%s=%s", key, value))
 }
 
-func (dc *dockerCompose) ToString() (string, error) {
+func (dc *DockerCompose) ToString() (string, error) {
 	d, err := yaml.Marshal(&dc)
 	if err != nil {
 		return "", err

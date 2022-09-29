@@ -7,7 +7,7 @@ import (
 
 func TestCreate(t *testing.T) {
 	got := Create("3.0")
-	want := &dockerCompose{
+	want := &DockerCompose{
 		Version:       "3.0",
 		Services:      map[string]*Service{},
 		VolumeDrivers: map[string]VolumeDriver{},
