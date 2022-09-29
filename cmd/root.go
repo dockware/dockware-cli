@@ -9,13 +9,12 @@ import (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "dockware",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Our interactive way of getting started with dockware, docker and Shopware",
+	Long: `The creator is a tool that helps you to build your Docker setup in an interactive way. 
+It will guide you through all these questions on what and how you want to develop.
+The final result might be a single line to start a Shopware version, or even a full 
+docker-compose.yml file with all kinds of containers and settings, ready to be used.
+And as always, we just try to help you with the onboarding steps to Docker and stick with the standard.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
