@@ -13,6 +13,10 @@ And yes, it's by far not the best code, haha....whatever.
 
 And thank you for using dockware!
 
+## Installation
+
+Just download the binary that you need, and install it as described on our website:
+https://dockware.io/cli
 
 ## Creator
 The creator is a tool that helps you to build your Docker setup in an interactive way.
@@ -24,7 +28,7 @@ with all kinds of containers and settings, ready to be used.
 And as always, we just try to help you with the onboarding steps to Docker and stick with the standard.
 
 ```bash
-./dockware creator 
+dockware-cli creator 
 ```
 
 The output should then look like this. Just continue answering the questions and you'll end up with a nice docker-compose.yml file.
@@ -45,7 +49,7 @@ Dockware Creator
 Get the version of your dockware-cli binary.
 
 ```bash
-./dockware version 
+dockware-cli version 
 ```
 
 
