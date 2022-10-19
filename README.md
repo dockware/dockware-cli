@@ -18,6 +18,15 @@ And thank you for using dockware!
 Just download the binary that you need, and install it as described on our website:
 https://dockware.io/cli
 
+
+## Version
+Get the version of your dockware-cli binary.
+
+```bash
+dockware-cli version 
+```
+
+
 ## Creator
 The creator is a tool that helps you to build your Docker setup in an interactive way.
 It will guide you through all these questions on what and how you want to develop.
@@ -45,11 +54,11 @@ Dockware Creator
 ```
 
 
-## Version
-Get the version of your dockware-cli binary.
+## Purge System
+We have provided a command to simply remove all dockware/* images from your system.
+Just use this command:
 
 ```bash
-dockware-cli version 
+dockware-cli purge 
 ```
-
 
