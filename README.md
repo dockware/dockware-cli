@@ -42,7 +42,7 @@ dockware-cli creator
 
 The output should then look like this. Just continue answering the questions and you'll end up with a nice docker-compose.yml file.
 
-```bash 
+``` 
 Dockware Creator
 
 ? What do you want to do?  [Use arrows to move, type to filter]
