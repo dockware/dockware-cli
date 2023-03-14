@@ -30,7 +30,7 @@ var creatorCmd = &cobra.Command{
 	Short: "Use the interactive dockware creator to get what you need for today's task",
 	Long:  "",
 	Run: func(cmd *cobra.Command, args []string) {
-		if !term.IsTerminal(syscall.Stdin) {
+		if !term.IsTerminal(int(syscall.Stdin)) {
 			log.Fatal("interactive terminal required")
 		}
 
