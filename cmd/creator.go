@@ -5,12 +5,10 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	dc "github.com/dockware/dockware-cli/dockercompose"
 	"github.com/spf13/cobra"
-	"golang.org/x/term"
 	"log"
 	"os"
 	"os/exec"
 	"strings"
-	"syscall"
 )
 
 type Answers struct {
@@ -30,10 +28,6 @@ var creatorCmd = &cobra.Command{
 	Short: "Use the interactive dockware creator to get what you need for today's task",
 	Long:  "",
 	Run: func(cmd *cobra.Command, args []string) {
-		if !term.IsTerminal(syscall.Stdin) {
-			log.Fatal("interactive terminal required")
-		}
-
 		a := &Answers{}
 		a.getDevIntent()
 
