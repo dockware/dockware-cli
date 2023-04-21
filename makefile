@@ -29,4 +29,6 @@ build: ## Builds the binary
 	env GOOS=darwin GOARCH=arm64 go build -o ./build/mac/arm64/dockware-cli .
 	env GOOS=darwin GOARCH=amd64 go build -o ./build/mac/amd64/dockware-cli .
 	env GOOS=windows GOARCH=amd64 go build -o ./build/windows/amd64/dockware-cli.exe .
+	env GOOS=windows GOARCH=arm go build -o ./build/windows/arm/dockware-cli.exe .
+	env GOOS=windows GOARCH=arm64 go build -o ./build/windows/arm64/dockware-cli.exe .
 	env GOOS=windows GOARCH=386 go build -o ./build/windows/386/dockware-cli.exe .
