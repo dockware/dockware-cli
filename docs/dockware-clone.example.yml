@@ -1,0 +1,75 @@
+# .dockware-clone.yml — put it in the project root (found with --code) or pass --config.
+# Every key is optional; unknown keys are rejected. Flags win over these values,
+# also when they switch one off (--orders-since-days 0, --skip-search-index=false,
+# --max-code-size -1).
+
+# Extension tables whose rows are exported (glob patterns). Everything outside the
+# Shopware core is exported schema-only unless listed here. Add only tables that
+# hold configuration or content, never personal data.
+allow_tables:
+  - acme_product_benefit
+  - acme_store_*
+
+# Additional schema-only tables (glob patterns, core tables allowed), e.g. big
+# derived data or an extension's tracking table.
+no_data:
+  - acme_tracking_event
+  - product_stream_mapping
+
+# Column rewrites on top of the defaults. A rule for a column that already has
+# a default replaces it. Kinds: email, first_name, last_name, company, street,
+# zip, city, phone, ip, username, token, password, empty_json_array, null.
+rules:
+  - { table: acme_newsletter_lead, column: email, kind: email }
+  - { table: acme_newsletter_lead, column: first_name, kind: first_name }
+  - { table: acme_newsletter_lead, column: phone, kind: phone }
+  - { table: acme_support_ticket, column: message, kind: null }
+
+# Overrides for the generated local environment (shop.env). Keys the clone set
+# empty because they looked like credentials are listed at the end of the run.
+env:
+  ACME_ERP_ENDPOINT: http://erp.local/api
+  ACME_ERP_API_KEY: sandbox-key
+  MAILER_DSN: smtp://127.0.0.1:1025
+
+# SQL run after the import, relative to this file: sandbox payment keys,
+# feature flags, test data.
+post_sql: .dockware-clone.sql
+
+# Extra rsync excludes for the code sync from the server (ignored with --code).
+# Leading "/" anchors at the project root, trailing "/" matches directories only.
+exclude:
+  - /public/catalogs/
+  - /custom/static-plugins/Legacy*/
+  - "*.psd"
+
+# Abort the code sync when the project on the server exceeds this size (MB).
+# Default 300, -1 = no limit.
+max_code_size_mb: 500
+
+# Keep only orders of the last n days and their child rows. 0 = all orders.
+orders_since_days: 90
+
+# Export the product search index schema-only and rebuild it locally.
+skip_search_index: true
+
+# PHP version of the local shop (major.minor). Default: the server's version.
+php: "8.3"
+
+# Node major version for the shop container and the default frontend image
+# (node:<major>). Default: .nvmrc / .node-version / package.json of the code,
+# else the server.
+node: "22"
+
+# Headless frontend started next to the shop (docker compose service "frontend").
+frontend:
+  path: frontend              # directory in the code tree, mounted to /app
+  # image: node:22            # default: node:<major> from node: above or --node, else detected from the frontend dir, the code root or the server, else node:lts
+  install: npm ci             # optional, runs before command
+  command: npm run dev        # required
+  port: 3000                  # port inside the container; published on --frontend-port
+  env:
+    NUXT_PUBLIC_SHOPWARE_ENDPOINT: ${SHOP_URL_INTERNAL}/store-api
+    NUXT_PUBLIC_SHOPWARE_ACCESS_TOKEN: ${ACCESS_KEY:Headless}
+    NUXT_PUBLIC_SITE_URL: ${FRONTEND_URL}
+    NUXT_PUBLIC_SHOP_URL: ${SHOP_URL}
