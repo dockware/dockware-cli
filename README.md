@@ -62,3 +62,15 @@ Just use this command:
 dockware-cli purge 
 ```
 
+
+## Clone
+Clone a running Shopware 6 shop over SSH into a local dockware environment. The database is
+anonymised on the server before it is transferred, the code is synced without secrets and
+uploads, vendor/ is installed with composer in the container and media is served from the source.
+
+```bash
+dockware-cli clone shop-stage --path /var/www/shop --code ~/projects/shop
+```
+
+See [docs/clone.md](docs/clone.md) for prerequisites, the `.dockware-clone.yml` reference and the error table.
+Step-by-step guide in German: [docs/clone-anleitung.md](docs/clone-anleitung.md).
